@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -44,26 +46,37 @@ public class ProductController {
     @GetMapping("/{id}")
     //public ProductDto findProductById(@PathVariable Long id) {
     public ResponseEntity<ProductDto> findProductById(@PathVariable Long id) {
+        // Example of sending Headers in the response
+        // Headers are usually used to send some metadata or tokens etc. in request & response
+        // These are in addition to the ones, being sent by DispatcherServlet.
+        MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+
         // By default DispatcherServlet sends HttpStatusCode in response.
         // If we want to overwrite, we can use ResponseEntity
         if (id <= 0) {
             //return null;
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            headers.add("Called by", "Budwak");
+            return new ResponseEntity<>(null, headers, HttpStatus.NOT_FOUND);
         }
 
         Product product = productService.getProductById(id);
+        headers.add("Called by", "Intelligent");
         if (product == null) {
             //return null;
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(null, headers, HttpStatus.BAD_REQUEST);
         }
         //return from(product);
-        return new ResponseEntity<>(from(product), HttpStatus.OK);
+        return new ResponseEntity<>(from(product), headers, HttpStatus.OK);
     }
 
     // Generally Post should return the object created, rather than void / bool etc.
     @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return product;
+    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
+        Product product = productService.createProduct(from(productDto));
+        if (product == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(from(product), HttpStatus.CREATED);
     }
 
     private ProductDto from(Product product) {
@@ -83,5 +96,26 @@ public class ProductController {
         }
 
         return productDto;
+    }
+
+    private Product from(ProductDto productDto) {
+        Product product = new Product();
+        product.setId(productDto.getId());
+        product.setName(productDto.getName());
+        product.setDescription(productDto.getDescription());
+        product.setPrice(productDto.getPrice());
+        product.setImageUrl(productDto.getImageUrl());
+        if (productDto.getCategoryDto() != null) {
+            product.setCategory(from(productDto.getCategoryDto()));
+        }
+        return product;
+    }
+
+    private Category from(CategoryDto categoryDto) {
+        Category category = new Category();
+        category.setId(categoryDto.getId());
+        category.setName(categoryDto.getName());
+        category.setDescription(categoryDto.getDescription());
+        return category;
     }
 }

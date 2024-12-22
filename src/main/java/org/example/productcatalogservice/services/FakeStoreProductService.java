@@ -58,6 +58,34 @@ public class FakeStoreProductService implements IProductService {
         return null;
     }
 
+    public Product createProduct(Product product) {
+        FakeStoreProductDto fakeStoreProductDto = from(product);
+        RestTemplate restTemplate = restTemplateBuilder.build();
+        ResponseEntity<FakeStoreProductDto> responseEntity =
+                restTemplate.postForEntity(
+                        "https://fakestoreapi.com/products",
+                        fakeStoreProductDto,
+                        FakeStoreProductDto.class
+                );
+        if ((responseEntity.getStatusCode().equals(HttpStatus.OK)
+                || responseEntity.getStatusCode().equals(HttpStatus.CREATED))
+            && responseEntity.getBody() != null) {
+            return from(responseEntity.getBody());
+        }
+        return null;
+    }
+
+    private FakeStoreProductDto from(Product product) {
+        FakeStoreProductDto fakeStoreProductDto = new FakeStoreProductDto();
+        fakeStoreProductDto.setId(product.getId());
+        fakeStoreProductDto.setTitle(product.getName());
+        fakeStoreProductDto.setDescription(product.getDescription());
+        fakeStoreProductDto.setPrice(product.getPrice());
+        fakeStoreProductDto.setImage(product.getImageUrl());
+        fakeStoreProductDto.setCategory(product.getCategory().getName());
+        return fakeStoreProductDto;
+    }
+
     private Product from(FakeStoreProductDto fakeStoreProductDto) {
         Product product = new Product();
         product.setId(fakeStoreProductDto.getId());
