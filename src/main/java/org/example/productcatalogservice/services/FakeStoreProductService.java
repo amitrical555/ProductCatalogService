@@ -35,9 +35,16 @@ public class FakeStoreProductService implements IProductService {
         // restTemplate.getForObject directly returns the object,
         // where as restTemplate.getForEntity returns a response
         // with additional details, e.g HttpStatusCode, ResponseBody. Headers etc.
+//        ResponseEntity<FakeStoreProductDto> fakeStoreProductDtoResponseEntity =
+//                restTemplate.getForEntity(
+//                        "https://fakestoreapi.com/products/{id}",
+//                        FakeStoreProductDto.class,
+//                        id);
         ResponseEntity<FakeStoreProductDto> fakeStoreProductDtoResponseEntity =
-                restTemplate.getForEntity(
+                this.requestForEntity(
                         "https://fakestoreapi.com/products/{id}",
+                        HttpMethod.GET,
+                        null,
                         FakeStoreProductDto.class,
                         id);
         if (fakeStoreProductDtoResponseEntity.getStatusCode().equals(HttpStatus.OK)
@@ -56,9 +63,15 @@ public class FakeStoreProductService implements IProductService {
         // We can't see datatype using li.getClass().getName().
         // Hence we shall use primitive type i.e. FakeStoreProductDto[].
         // "Tel aise na nikale to waise nikal lo"
+//        ResponseEntity<FakeStoreProductDto[]> fakeStoreProductListEntity =
+//                restTemplate.getForEntity(
+//                        "https://fakestoreapi.com/products",
+//                        FakeStoreProductDto[].class);
         ResponseEntity<FakeStoreProductDto[]> fakeStoreProductListEntity =
-                restTemplate.getForEntity(
+                this.requestForEntity(
                         "https://fakestoreapi.com/products",
+                        HttpMethod.GET,
+                        null,
                         FakeStoreProductDto[].class);
         if (fakeStoreProductListEntity.getStatusCode().equals(HttpStatus.OK)
             && fakeStoreProductListEntity.getBody() != null) {
@@ -74,9 +87,16 @@ public class FakeStoreProductService implements IProductService {
     public Product createProduct(Product product) {
         FakeStoreProductDto fakeStoreProductDto = from(product);
         RestTemplate restTemplate = restTemplateBuilder.build();
+//        ResponseEntity<FakeStoreProductDto> responseEntity =
+//                restTemplate.postForEntity(
+//                        "https://fakestoreapi.com/products",
+//                        fakeStoreProductDto,
+//                        FakeStoreProductDto.class
+//                );
         ResponseEntity<FakeStoreProductDto> responseEntity =
-                restTemplate.postForEntity(
+                this.requestForEntity(
                         "https://fakestoreapi.com/products",
+                        HttpMethod.POST,
                         fakeStoreProductDto,
                         FakeStoreProductDto.class
                 );
