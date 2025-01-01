@@ -36,8 +36,10 @@ public class ProductController {
     public ResponseEntity<List<ProductDto>> getAllProducts() {
         List<Product> products = productService.getAllProducts();
         List<ProductDto> productDtos = new ArrayList<>();
-        for (Product product : products) {
-            productDtos.add(from(product));
+        if (products != null) {
+            for (Product product : products) {
+                productDtos.add(from(product));
+            }
         }
         return new ResponseEntity<>(productDtos, HttpStatus.OK);
     }
@@ -77,6 +79,39 @@ public class ProductController {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(from(product), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDto> updateProductViaPut(@PathVariable Long id, @RequestBody ProductDto productDto) {
+        if (productDto == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        Product product = productService.updateProduct(id, from(productDto));
+        if (product == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(from(product), HttpStatus.OK);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProductDto> updateProductViaPatch(@PathVariable Long id, @RequestBody ProductDto productDto) {
+        if (productDto == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        Product product = productService.updateProduct(id, from(productDto));
+        if (product == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(from(product), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ProductDto> deleteProduct(@PathVariable Long id) {
+        Product product = productService.deleteProductById(id);
+        if (product == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(from(product), HttpStatus.OK);
     }
 
     private ProductDto from(Product product) {

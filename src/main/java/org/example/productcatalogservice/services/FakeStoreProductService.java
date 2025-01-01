@@ -5,15 +5,21 @@ import org.example.productcatalogservice.models.Category;
 import org.example.productcatalogservice.models.Product;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
+import org.springframework.web.client.RequestCallback;
+import org.springframework.web.client.ResponseExtractor;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 // We can add qualifiers, which we can use with @Qualifier with @Autowired
 // Refer FakeStoreProductService and ProductController for example
@@ -43,6 +49,13 @@ public class FakeStoreProductService implements IProductService {
 
     public List<Product> getAllProducts() {
         RestTemplate restTemplate = restTemplateBuilder.build();
+
+        // Note: Here we can't use List<FakeStoreProductDto> as type of List is
+        // inferred after assignment, for e.g. List.of(1,2), List.of("First", "Second") etc.
+        // Generic types are determined only after inserting elements.
+        // We can't see datatype using li.getClass().getName().
+        // Hence we shall use primitive type i.e. FakeStoreProductDto[].
+        // "Tel aise na nikale to waise nikal lo"
         ResponseEntity<FakeStoreProductDto[]> fakeStoreProductListEntity =
                 restTemplate.getForEntity(
                         "https://fakestoreapi.com/products",
@@ -75,6 +88,78 @@ public class FakeStoreProductService implements IProductService {
         return null;
     }
 
+    // Using PUT method call
+    /*
+    public Product updateProduct(Long productId, Product product) {
+        FakeStoreProductDto fakeStoreProductDto = from(product);
+        RestTemplate restTemplate = restTemplateBuilder.build();
+
+        // Calling below line does not return ResponseEntity,
+        // and there is no putForEntity method.
+        // So we shall copy implementation of postForEntity method
+        // in our class and update it for all HttpMethod support.
+//        restTemplate.put(
+//                "https://fakestoreapi.com/products/{productId}",
+//                fakeStoreProductDto,
+//                product.getId()
+//        );
+//        return product;
+
+        ResponseEntity<FakeStoreProductDto> responseEntity = this.requestForEntity(
+                "https://fakestoreapi.com/products/{productId}",
+                HttpMethod.PUT,
+                fakeStoreProductDto,
+                FakeStoreProductDto.class,
+                productId
+        );
+        if (responseEntity.getStatusCode().equals(HttpStatus.OK)
+            && responseEntity.getBody() != null) {
+            return from(responseEntity.getBody());
+        }
+        return null;
+    }
+    */
+
+    // Using PATCH method call
+    public Product updateProduct(Long productId, Product product) {
+        FakeStoreProductDto fakeStoreProductDto = from(product);
+        RestTemplate restTemplate = restTemplateBuilder.build();
+        ResponseEntity<FakeStoreProductDto> responseEntity = this.requestForEntity(
+                "https://fakestoreapi.com/products/{productId}",
+                HttpMethod.PATCH,
+                fakeStoreProductDto,
+                FakeStoreProductDto.class,
+                productId
+        );
+        if (responseEntity.getStatusCode().equals(HttpStatus.OK)
+                && responseEntity.getBody() != null) {
+            return from(responseEntity.getBody());
+        }
+        return null;
+    }
+
+    public Product deleteProductById(Long id) {
+        RestTemplate restTemplate = restTemplateBuilder.build();
+//        restTemplate.delete(
+//                "https://fakestoreapi.com/products/{productId}",
+//                id
+//        );
+//        return null;
+
+        ResponseEntity<FakeStoreProductDto> responseEntity = this.requestForEntity(
+                "https://fakestoreapi.com/products/{productId}",
+                HttpMethod.DELETE,
+                null,
+                FakeStoreProductDto.class,
+                id
+        );
+        if (responseEntity.getStatusCode().equals(HttpStatus.OK)
+            && responseEntity.getBody() != null) {
+            return from(responseEntity.getBody());
+        }
+        return null;
+    }
+
     private FakeStoreProductDto from(Product product) {
         FakeStoreProductDto fakeStoreProductDto = new FakeStoreProductDto();
         fakeStoreProductDto.setId(product.getId());
@@ -97,5 +182,33 @@ public class FakeStoreProductService implements IProductService {
         category.setName(fakeStoreProductDto.getCategory());
         product.setCategory(category);
         return product;
+    }
+
+    // ****** Below methods are taken from RestTemplate and modified ****** //
+
+    private <T> ResponseEntity<T> requestForEntity(String url, HttpMethod method, @Nullable Object request, Class<T> responseType, Object... uriVariables) throws RestClientException {
+        RestTemplate restTemplate = restTemplateBuilder.build();
+        RequestCallback requestCallback = restTemplate.httpEntityCallback(request, responseType);
+        ResponseExtractor<ResponseEntity<T>> responseExtractor = restTemplate.responseEntityExtractor(responseType);
+        return (ResponseEntity)nonNull((ResponseEntity)restTemplate.execute(url, method, requestCallback, responseExtractor, uriVariables));
+    }
+
+    private <T> ResponseEntity<T> requestForEntity(String url, HttpMethod method, @Nullable Object request, Class<T> responseType, Map<String, ?> uriVariables) throws RestClientException {
+        RestTemplate restTemplate = restTemplateBuilder.build();
+        RequestCallback requestCallback = restTemplate.httpEntityCallback(request, responseType);
+        ResponseExtractor<ResponseEntity<T>> responseExtractor = restTemplate.responseEntityExtractor(responseType);
+        return (ResponseEntity)nonNull((ResponseEntity)restTemplate.execute(url, method, requestCallback, responseExtractor, uriVariables));
+    }
+
+    private <T> ResponseEntity<T> methodForEntity(URI url, HttpMethod method, @Nullable Object request, Class<T> responseType) throws RestClientException {
+        RestTemplate restTemplate = restTemplateBuilder.build();
+        RequestCallback requestCallback = restTemplate.httpEntityCallback(request, responseType);
+        ResponseExtractor<ResponseEntity<T>> responseExtractor = restTemplate.responseEntityExtractor(responseType);
+        return (ResponseEntity)nonNull((ResponseEntity)restTemplate.execute(url, method, requestCallback, responseExtractor));
+    }
+
+    private static <T> T nonNull(@Nullable T result) {
+        Assert.state(result != null, "No result");
+        return result;
     }
 }
