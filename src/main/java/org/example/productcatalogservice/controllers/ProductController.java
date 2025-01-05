@@ -1,5 +1,6 @@
 package org.example.productcatalogservice.controllers;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.example.productcatalogservice.dtos.CategoryDto;
 import org.example.productcatalogservice.dtos.ProductDto;
 import org.example.productcatalogservice.models.Category;
@@ -48,26 +49,40 @@ public class ProductController {
     @GetMapping("/{id}")
     //public ProductDto findProductById(@PathVariable Long id) {
     public ResponseEntity<ProductDto> findProductById(@PathVariable Long id) {
-        // Example of sending Headers in the response
-        // Headers are usually used to send some metadata or tokens etc. in request & response
-        // These are in addition to the ones, being sent by DispatcherServlet.
-        MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+        try {
+            // Example of sending Headers in the response
+            // Headers are usually used to send some metadata or tokens etc. in request & response
+            // These are in addition to the ones, being sent by DispatcherServlet.
+            MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
 
-        // By default DispatcherServlet sends HttpStatusCode in response.
-        // If we want to overwrite, we can use ResponseEntity
-        if (id <= 0) {
-            headers.add("Called by", "Budwak");
-            return new ResponseEntity<>(null, headers, HttpStatus.NOT_FOUND);
-        }
+            // By default DispatcherServlet sends HttpStatusCode in response.
+            // If we want to overwrite, we can use ResponseEntity
+            if (id <= 0) {
+                headers.add("Called by", "Budwak");
+                //return new ResponseEntity<>(null, headers, HttpStatus.NOT_FOUND);
+                throw new RuntimeException("Product id must be > 0");
+            }
 
-        Product product = productService.getProductById(id);
-        headers.add("Called by", "Intelligent");
-        if (product == null) {
-            return new ResponseEntity<>(null, headers, HttpStatus.BAD_REQUEST);
+            Product product = productService.getProductById(id);
+            headers.add("Called by", "Intelligent");
+            if (product == null) {
+                //return new ResponseEntity<>(null, headers, HttpStatus.BAD_REQUEST);
+                throw new IllegalArgumentException("Product id should be <= 20");
+            }
+            //return from(product);
+            return new ResponseEntity<>(from(product), headers, HttpStatus.OK);
+        } catch (Exception ex) {
+            throw ex;
         }
-        //return from(product);
-        return new ResponseEntity<>(from(product), headers, HttpStatus.OK);
     }
+
+    // Below one is Local exception handler.
+    // For global exception handler, a class with annotation @RestControllerAdvice
+    // to be made, with following functions.
+//    @ExceptionHandler(IllegalArgumentException.class)
+//    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+//    }
 
     // Generally Post should return the object created, rather than void / bool etc.
     @PostMapping
