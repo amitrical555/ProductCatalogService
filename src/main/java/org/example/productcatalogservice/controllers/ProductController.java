@@ -56,7 +56,6 @@ public class ProductController {
         // By default DispatcherServlet sends HttpStatusCode in response.
         // If we want to overwrite, we can use ResponseEntity
         if (id <= 0) {
-            //return null;
             headers.add("Called by", "Budwak");
             return new ResponseEntity<>(null, headers, HttpStatus.NOT_FOUND);
         }
@@ -64,7 +63,6 @@ public class ProductController {
         Product product = productService.getProductById(id);
         headers.add("Called by", "Intelligent");
         if (product == null) {
-            //return null;
             return new ResponseEntity<>(null, headers, HttpStatus.BAD_REQUEST);
         }
         //return from(product);
@@ -121,15 +119,9 @@ public class ProductController {
         productDto.setDescription(product.getDescription());
         productDto.setPrice(product.getPrice());
         productDto.setImageUrl(product.getImageUrl());
-
         if (product.getCategory() != null) {
-            CategoryDto categoryDto = new CategoryDto();
-            categoryDto.setId(product.getCategory().getId());
-            categoryDto.setName(product.getCategory().getName());
-            categoryDto.setDescription(product.getCategory().getDescription());
-            productDto.setCategoryDto(categoryDto);
+            productDto.setCategoryDto(from(product.getCategory()));
         }
-
         return productDto;
     }
 
@@ -152,5 +144,13 @@ public class ProductController {
         category.setName(categoryDto.getName());
         category.setDescription(categoryDto.getDescription());
         return category;
+    }
+
+    private CategoryDto from(Category category) {
+        CategoryDto categoryDto = new CategoryDto();
+        categoryDto.setId(category.getId());
+        categoryDto.setName(category.getName());
+        categoryDto.setDescription(category.getDescription());
+        return categoryDto;
     }
 }
